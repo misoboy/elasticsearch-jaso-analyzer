@@ -1,4 +1,4 @@
-# Korean Jaso Analyzer for Elasticsearch 7.9.1
+# Korean Jaso Analyzer for Elasticsearch 7.14.1
 
 ## install
 
@@ -6,11 +6,11 @@
 $ gradle build buildPluginZip
 ~~~
 
-###### 자동완성용 한글 자소분석기입니다. elasticsearch 7.9.1 에서 테스트 되었습니다
+###### 자동완성용 한글 자소분석기입니다. elasticsearch 7.14.1 에서 테스트 되었습니다
 
 ###### *설치*
 ```
-bin/elasticsearch-plugin install https://github.com/sdg9670/elasticsearch-jaso-analyzer/releases/download/7.9.1/jaso-analyzer-plugin-7.9.1-plugin.zip
+bin/elasticsearch-plugin install https://github.com/misoboy/elasticsearch-jaso-analyzer/releases/download/7.14.1/jaso-analyzer-plugin-7.14.1-plugin.zip
 ```
 
 ###### *삭제 (필요시)*
