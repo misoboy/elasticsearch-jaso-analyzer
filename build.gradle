@@ -3,7 +3,7 @@ apply plugin: 'java'
 sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
 
-version = '6.8.12'
+version = '7.14.1'
 jar {
     manifest {
         attributes 'Implementation-Title': 'Elasticsearch Jaso Analyzer Plugin',
@@ -16,12 +16,12 @@ repositories {
 }
 
 dependencies {
-    compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
-    compile group: 'org.elasticsearch', name: 'elasticsearch', version: version
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.0'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.0'
-    testCompile group: 'junit', name: 'junit', version: '4.+'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'commons-collections', name: 'commons-collections', version: '3.2'
+    implementation group: 'org.elasticsearch', name: 'elasticsearch', version: version
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.0'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.0'
+    implementation group: 'junit', name: 'junit', version: '4.+'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
 }
 
@@ -29,18 +29,18 @@ test {
     systemProperties 'property': 'value'
 }
 
-uploadArchives {
-    repositories {
-       flatDir {
-           dirs 'repos'
-       }
-    }
-}
+//uploadArchives {
+//    repositories {
+//       flatDir {
+//           dirs 'repos'
+//       }
+//    }
+//}
 
 task buildPluginZip(type: Zip, dependsOn:[':jar']) {
     baseName = 'jaso-analyzer-plugin'
     classifier = 'plugin'
-    from files(libsDir)
+    from files(libsDirectory)
     from 'src/main/resources'
 }
 
