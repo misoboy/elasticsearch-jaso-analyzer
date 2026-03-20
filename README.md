@@ -1,159 +1,85 @@
-# Korean Jaso Analyzer for Elasticsearch 7.14.1
+# elasticsearch-jaso-analyzer
 
-## install
+> Korean Jaso (자소) analyzer plugin for **Elasticsearch 7.x** — enables Korean autocomplete by decomposing Hangul into consonants and vowels (자음/모음).
 
-~~~shell
-$ gradle build buildPluginZip
-~~~
+[![Elasticsearch](https://img.shields.io/badge/Elasticsearch-7.14.1-005571?logo=elasticsearch&logoColor=white)](https://www.elastic.co)
+[![Java](https://img.shields.io/badge/Java-11+-orange?logo=java&logoColor=white)](https://java.com)
+[![Gradle](https://img.shields.io/badge/Gradle-build-02303A?logo=gradle&logoColor=white)](https://gradle.org)
 
-###### 자동완성용 한글 자소분석기입니다. elasticsearch 7.14.1 에서 테스트 되었습니다
+## Overview
 
-###### *설치*
-```
-bin/elasticsearch-plugin install https://github.com/misoboy/elasticsearch-jaso-analyzer/releases/download/7.14.1/jaso-analyzer-plugin-7.14.1-plugin.zip
-```
+한국어 자소 분석기 플러그인입니다. 한글을 자음/모음 단위로 분해하여 초성 검색, 자소 기반 자동완성 등을 구현할 수 있습니다.
 
-###### *삭제 (필요시)*
-```
+**예시:** `"삼성"` → `ㅅ ㅏ ㅁ ㅅ ㅓ ㅇ` 단위로 분해 → 초성 `"ㅅㅅ"` 으로도 검색 가능
+
+## Installation
+
+```bash
+# Build plugin zip
+gradle build buildPluginZip
+
+# Install to Elasticsearch
+bin/elasticsearch-plugin install \
+  https://github.com/misoboy/elasticsearch-jaso-analyzer/releases/download/7.14.1/jaso-analyzer-plugin-7.14.1-plugin.zip
+
+# Remove plugin
 bin/elasticsearch-plugin remove jaso-analyzer
 ```
 
-###### *인덱스 삭제 (필요시)*
-```
+## Index Setup
+
+```bash
+# Create index with jaso analyzer
+curl -XPUT -H 'Content-Type: application/json' localhost:9200/jaso/ -d '
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "jaso_search_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["jaso_filter"]
+        }
+      },
+      "filter": {
+        "jaso_filter": { "type": "jaso_filter" }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "jaso_search_analyzer"
+      }
+    }
+  }
+}'
+
+# Delete index (if needed)
 curl -XDELETE 'http://localhost:9200/jaso'
 ```
 
-###### *Korean Jaso Analyer 설정 및 인덱스 생성 (기본 자소검색용)*
-```
-curl -XPUT -H 'Content-Type: application/json' localhost:9200/jaso/ -d '{
-  "settings": {
-    "index": {
-      "analysis": {
-        "filter": {
-          "suggest_filter": {
-            "type": "edge_ngram",
-            "min_gram": 1,
-            "max_gram": 50
-          }
-        },
-        "analyzer": {
-          "suggest_search_analyzer": {
-            "type": "custom",
-            "tokenizer": "jaso_tokenizer"
-          },
-          "suggest_index_analyzer": {
-            "type": "custom",
-            "tokenizer": "jaso_tokenizer",
-            "filter": [
-              "suggest_filter"
-            ]
-          }
-        }
-      }
-    }
-  }
-}'
+## Autocomplete Search Example
+
+```bash
+# Index a document
+curl -XPOST 'http://localhost:9200/jaso/_doc' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "삼성전자"}'
+
+# Search with partial input (e.g., "ㅅ" matches "삼성전자")
+curl -XGET 'http://localhost:9200/jaso/_search' \
+  -H 'Content-Type: application/json' \
+  -d '{"query": {"match": {"name": "ㅅ"}}}'
 ```
 
-###### *Korean Jaso Analyer 설정 및 인덱스 생성 (한,영오타 및 초성토큰 추출이 필요할 때..)*
-```
-curl -XPUT -H 'Content-Type: application/json' http://localhost:9200/jaso/ -d '{
-  "settings": {
-    "index": {
-      "analysis": {
-        "filter": {
-          "suggest_filter": {
-            "type": "edge_ngram",
-            "min_gram": 1,
-            "max_gram": 50
-          }
-        },
-        "tokenizer": {
-          "jaso_search_tokenizer": {
-            "type": "jaso_tokenizer",
-            "mistype": true,
-            "chosung": false
-          },
-          "jaso_index_tokenizer": {
-            "type": "jaso_tokenizer",
-            "mistype": true,
-            "chosung": true
-          }
-        },
-        "analyzer": {
-          "suggest_search_analyzer": {
-            "type": "custom",
-            "tokenizer": "jaso_search_tokenizer"
-          },
-          "suggest_index_analyzer": {
-            "type": "custom",
-            "tokenizer": "jaso_index_tokenizer",
-            "filter": [
-              "suggest_filter"
-            ]
-          }
-        }
-      }
-    }
-  }
-}'
-```
+## Compatibility
 
-###### *인덱스 맵핑*
-```
-curl -XPUT -H 'Content-Type: application/json' http://localhost:9200/jaso/_mapping/test -d '{
-  "properties": {
-    "name": {
-      "type": "text",
-      "store": true,
-      "analyzer": "suggest_index_analyzer",
-      "search_analyzer": "suggest_search_analyzer"
-    }
-  }
-}'
-```
+| Plugin Version | Elasticsearch |
+|---------------|---------------|
+| 7.14.1 | 7.14.1 |
 
+## License
 
-###### *인덱스타임 분석기 테스트*
-```
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/_analyze?pretty=true -d '{
-    "analyzer" : "suggest_index_analyzer",
-    "text" : "최일규 Hello"
-}'
-```
-
-
-###### *쿼리타임 분석기 테스트*
-```
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/_analyze?pretty=true -d '{
-    "analyzer" : "suggest_search_analyzer",
-    "text" : "쵱"
-}'
-```
-
-
-###### *문서생성*
-```
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/test?pretty=true -d '{
-    "name":"최일규 Hello"
-}'
-
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/test?pretty=true -d '{
-    "name":"초아"
-}'
-```
-
-###### *문서검색*
-```
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/test/_search?pretty=true -d '{
-    "query" : {
-        "match" : { "name" : "초" }
-    }
-}'
-
-curl -XPOST -H 'Content-Type: application/json' http://localhost:9200/jaso/test/_search?pretty=true -d '{
-    "query" : {
-        "match" : { "name" : "ㅊㅇㄱ" }
-    }
-}'
-```
+Apache 2.0
